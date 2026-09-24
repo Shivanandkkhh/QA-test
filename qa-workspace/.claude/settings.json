@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node scripts/qa.js:*)",
+      "Read(input/**)",
+      "Read(evidence/**)",
+      "Read(test-results/**)",
+      "Read(figma-package/**)",
+      "Edit(test-results/**)",
+      "Write(test-results/**)"
+    ],
+    "deny": [
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(git switch -c:*)",
+      "Bash(git branch:*)",
+      "Bash(git reset:*)",
+      "Bash(git stash:*)",
+      "Bash(gh:*)",
+      "Bash(shopify theme push:*)",
+      "Bash(shopify theme publish:*)",
+      "Bash(shopify theme delete:*)",
+      "Edit(input/source-code/**)",
+      "Write(input/source-code/**)",
+      "Bash(rm input/source-code:*)",
+      "Bash(rm -rf input/source-code:*)"
+    ]
+  }
+}

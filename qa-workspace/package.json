@@ -1,0 +1,11 @@
+{
+  "name": "shopify-qa-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reusable Shopify manual-QA workspace driven by Claude Code",
+  "type": "commonjs",
+  "dependencies": {
+    "docx": "^9.7.2",
+    "playwright": "^1.63.0"
+  }
+}

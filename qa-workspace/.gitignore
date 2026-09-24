@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Secrets — never share
+input/credentials.local.json
+.claude/settings.local.json
+.env
+*.local.json
+
+# Developer source code copied in for investigation
+input/source-code/*
+!input/source-code/.gitkeep
+
+# QA run output (screenshots, reports, run data) — large and project-specific
+evidence/**/*
+!evidence/**/
+!evidence/**/.gitkeep
+reports/**/*.docx
+test-results/*
+!test-results/.gitkeep
+figma-package/*
+!figma-package/.gitkeep
+
+# OS / editor
+.DS_Store
+~$*.docx
+.vscode/*
+!.vscode/extensions.json
