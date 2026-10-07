@@ -133,13 +133,15 @@ async function buildReport(runInfo, data) {
   const env = r.environment || {};
   const req = r.requirement || {};
   const figma = r.figma || {};
+  const previewOnly = r.mode === 'preview';
+  const qaType = previewOnly ? 'Preview-only QA (no design provided)' : 'Design QA (website vs Figma)';
 
   const children = [
     // ---- Cover ----
     p('', { after: 1200 }),
     p('QA TEST REPORT', { bold: true, size: 26, color: COLORS.accent, after: 120 }),
     p(project, { bold: true, size: 52, after: 200 }),
-    p(`${r.scopeTitle || 'Shopify storefront QA'}  ·  ${date}`, { size: 24, color: COLORS.muted, after: 600 }),
+    p(`${r.scopeTitle || qaType}  ·  ${date}`, { size: 24, color: COLORS.muted, after: 600 }),
     table(null, [[cell([new Paragraph({ children: [run('Overall result:  ', { bold: true, size: 24 }), run(v, { bold: true, size: 24, color: verdictColor })] })], { fill: 'F9FAFB' })]]),
     p('', { after: 200 }),
     table(['Scenarios', 'Passed', 'Failed', 'Blocked', 'Not verified', 'Confirmed bugs'],
@@ -147,7 +149,7 @@ async function buildReport(runInfo, data) {
     p('', { after: 120 }),
     table(SEVERITIES, [SEVERITIES.map((x) => cell([new Paragraph({ children: [run(String(s.severity[x]), { bold: true, size: 26, color: SEV_COLOR[x] })] })]))]),
     p('', { after: 400 }),
-    kv([['Prepared by', r.tester || 'QA'], ['Run ID', runInfo.id], ['Tested URL', r.previewUrl]]),
+    kv([['Prepared by', r.tester || 'QA'], ['QA type', qaType], ['Run ID', runInfo.id], ['Tested URL', r.previewUrl]]),
 
     // ---- 1. Summary ----
     new Paragraph({ children: [new PageBreak()] }),
@@ -163,16 +165,19 @@ async function buildReport(runInfo, data) {
       ['Project', project],
       ['Test date', date],
       ['Tester', r.tester],
+      ['QA type', qaType],
       ['Tested URL (preview/staging)', r.previewUrl],
       ['Pages in scope', (r.scope || []).join(', ')],
-      ['Figma file', figma.url],
+      ['Figma file', previewOnly ? 'Not provided (preview-only QA)' : figma.url],
       ['Figma frames compared', (figma.frames || []).map((f) => (typeof f === 'string' ? f : `${f.name}${f.url ? ' — ' + f.url : ''}`)).join('\n')],
       ['Figma QA page', figma.qaPage && figma.qaPage.status !== 'not started' ? `${figma.qaPage.name || 'QA - Bug Reports'}: ${figma.qaPage.status}${figma.qaPage.url ? ' — ' + figma.qaPage.url : ''}` : ''],
       ['Requirement / ticket', [req.id, req.title].filter(Boolean).join(' — ') || req.source],
       ['Source code reviewed', r.sourceCode?.provided ? 'Yes (read-only investigation)' : 'No'],
     ]),
     h('Requirement tested', 3),
-    p(req.summary || 'No written requirement provided; Figma design used as the reference.'),
+    p(req.summary || (previewOnly
+      ? 'No written requirement or design provided. The site was tested against standard Shopify/e-commerce behaviour, its own consistency across pages and viewports, obvious defects, and basic accessibility.'
+      : 'No written requirement provided; Figma design used as the reference.')),
     ...(req.acceptanceCriteria?.length ? [h('Acceptance criteria', 3), ...numbered(req.acceptanceCriteria)] : []),
 
     // ---- 3. Environment ----
@@ -239,7 +244,7 @@ async function buildReport(runInfo, data) {
       ...scenarios.filter((x) => x.status === 'NOT VERIFIED').map((x) => `${x.id} ${x.title} — ${x.notes || 'could not be verified'}`),
       ...observations.filter((o) => o.type === 'NOT VERIFIED').map((o) => `${o.id} ${o.title} — ${o.details || ''}`),
     ]),
-    h('Design differences (not treated as bugs)', 3),
+    h(previewOnly ? 'Visual suggestions (not treated as bugs; no design to compare against)' : 'Design differences (not treated as bugs)', 3),
     ...list(observations.filter((o) => o.type === 'DESIGN DIFFERENCE').map((o) => `${o.id} ${o.title} — ${o.details || ''}`)),
     h('Checked and working as expected', 3),
     ...list(observations.filter((o) => o.type === 'EXPECTED BEHAVIOR').map((o) => `${o.id} ${o.title} — ${o.details || ''}`)),

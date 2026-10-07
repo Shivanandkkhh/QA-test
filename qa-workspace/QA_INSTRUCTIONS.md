@@ -20,6 +20,35 @@ Read this whole file at the start of every QA run and follow it phase by phase.
 
 Sources of truth: **website behaviour** for what actually happens, **requirement** for functionality, **Figma** for visuals.
 
+---
+
+## 0.1 QA modes
+
+The mode is decided by what the tester gives you. Store it in `run.json → mode`.
+
+| Mode | When | What you do | Outputs |
+|---|---|---|---|
+| **design** (Design QA) | Preview URL **and** a Figma link | All phases 1–7, including Phase 3 (Figma vs website) | Word report **and** bug cards on the Figma "QA - Bug Reports" page (after the tester confirms) |
+| **preview** (Preview-only QA) | Preview URL only, no Figma | Phases 1, 2, 4, 5, 6, 7. **Skip Phase 3** and every Figma step | Word report listing all bugs. No Figma reads or writes, no Figma package |
+
+If there's no Figma link, use **preview** mode without asking. Say which mode you picked in your first progress update.
+
+**What "expected" means in preview mode.** There's no design to compare against, so a bug needs one of these as its expected result:
+1. The requirement or acceptance criteria, if the tester gave any.
+2. Standard Shopify/e-commerce behaviour a customer relies on. For example: Add to cart adds the selected variant
+   and quantity, cart totals add up, links work, images load, forms validate, the mobile menu and cart drawer open and close,
+   back/refresh keep state.
+3. The site's own consistency. For example, the same button looks or behaves differently on two pages, or desktop shows
+   something that mobile hides or breaks.
+4. Obvious defects: broken links or images, JavaScript errors that break a feature, horizontal scroll, overlapping or cut-off
+   text, elements off-screen, placeholder or lorem-ipsum text, typos, wrong currency formatting.
+5. Basic accessibility: missing alt text on meaningful images, unlabeled form fields or icon buttons, controls that can't be
+   reached by keyboard, very low text contrast.
+
+Pure taste ("this spacing looks large", "I'd use a different colour") is **not** a bug in preview mode. Put it in
+`observations.json` as `DESIGN DIFFERENCE` with a note that no design was provided.
+In each bug's `requirement` field, say which basis applies, e.g. "Standard e-commerce behaviour" or "Site consistency (PDP vs collection)".
+
 Customer-level actions are fine (adding to cart, applying test discount codes, filling forms with obvious test data such as `qa-test@example.com`).
 Submitting forms that send real emails, create accounts or subscribe to newsletters → **ask the tester first**.
 
@@ -137,7 +166,7 @@ UI and Responsive bugs **must** have a marked screenshot. Run `node scripts/qa.j
 
 1. Read `QA_CONFIG.md` and everything in `input/` (requirements, notes, screenshots).
 2. Fill `run.json` (project, previewUrl, figma, requirement with acceptance criteria, sourceCode, scope).
-3. Inspect the Figma frames (`get_metadata` → `get_design_context` / `get_screenshot`). Note desktop and mobile frames,
+3. *(Design mode only)* Inspect the Figma frames (`get_metadata` → `get_design_context` / `get_screenshot`). Note desktop and mobile frames,
    states (hover, open menu, empty cart, errors) and exact values (fonts, sizes, colours, spacing).
 4. Write `test-plan.md`: pages/components in scope, expected behaviour, scenario list (with IDs), viewports,
    edge/negative cases, and what you **cannot** test (and why).
@@ -149,7 +178,7 @@ Run `audit` at `desktop-1440` and `mobile-390` for each in-scope page. Open the 
 the structure, navigation, sections, interactive elements, forms, product info, cart behaviour and dynamic content.
 Do not report internal implementation differences — only user-visible behaviour.
 
-## 5. Phase 3 — Figma vs website
+## 5. Phase 3 — Figma vs website  *(design mode only; skip in preview mode)*
 
 For each Figma frame: take the matching website screenshot at the same width, then compare
 layout, spacing, alignment, typography (family/size/weight/line-height), colours, borders, radius, shadows, icons,
@@ -255,7 +284,8 @@ summary, bug index, issues by type (UI / Functional / Responsive / Accessibility
 marked screenshots and Figma comparisons, regression concerns, blocked/not-verified/observations, scenario log.
 Before generating, fill `run.json` → `summary`, `regressionConcerns`, `environment.notes`.
 
-### Figma QA page (only after the tester says "yes, update Figma")
+### Figma QA page (design mode only, and only after the tester says "yes, update Figma")
+In preview mode, skip this whole section. The Word report is the only output.
 1. `whoami` + a read of the file to confirm access. Load the **figma-use** skill before any `use_figma` call.
 2. Find or create the page **QA - Bug Reports**. Never touch other pages.
 3. On it, create four labelled sections/frames: **UI Bugs**, **Functional Bugs**, **Responsive Bugs**, **Accessibility Bugs**.
@@ -279,7 +309,7 @@ Before generating, fill `run.json` → `summary`, `regressionConcerns`, `environ
 
 ### Final answer to the tester
 Paste the output of `node scripts/qa.js status`, then the path of the Word report, the Figma result
-(annotated / packaged + folder), and a short list of anything NOT VERIFIED or BLOCKED that needs a manual step.
+(annotated / packaged + folder; design mode only), and a short list of anything NOT VERIFIED or BLOCKED that needs a manual step.
 
 ---
 

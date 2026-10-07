@@ -10,7 +10,8 @@ const HELP = `
 Shopify QA workspace commands (run from the qa-workspace folder):
 
   doctor                                Check the browser, Word and folder setup
-  new-run "<Project>" [--date YYYY-MM-DD]  Start a new QA run (becomes the active run)
+  new-run "<Project>" [--mode design|preview] [--date YYYY-MM-DD]  Start a new QA run (becomes the active run)
+                                        design = preview URL + Figma (default), preview = preview URL only
   use-run <run-id>                      Switch the active run
   audit <url> [--viewport v] [--no-links]  Explore a page: structure, broken links/images, a11y leads, errors
   responsive <url> [--viewports a,b]    Screenshots + overflow check at every viewport
@@ -71,13 +72,15 @@ const commands = {
     const project = pos[0];
     if (!project) throw new Error('Usage: new-run "<Project Name>"');
     const date = flags.date || C.today();
+    const mode = flags.mode || 'design';
+    if (!['design', 'preview'].includes(mode)) throw new Error('--mode must be "design" (preview URL + Figma) or "preview" (preview URL only)');
     let id = `${date}-${C.slugify(project)}`;
     for (let n = 2; fs.existsSync(path.join(C.DIRS.results, id)); n++) id = `${date}-${C.slugify(project)}-${n}`;
     const dir = C.mkdirp(path.join(C.DIRS.results, id));
     C.mkdirp(path.join(dir, 'logs'));
     C.mkdirp(path.join(dir, 'scenarios'));
     C.writeJson(path.join(dir, 'run.json'), {
-      project, date, tester: flags.tester || '', scopeTitle: '',
+      project, date, mode, tester: flags.tester || '', scopeTitle: '',
       previewUrl: flags.url || '', scope: [], outOfScope: [],
       figma: { url: '', fileKey: '', frames: [], qaPage: { name: 'QA - Bug Reports', status: 'not started', url: '' } },
       requirement: { id: '', title: '', source: '', summary: '', acceptanceCriteria: [] },
@@ -90,7 +93,7 @@ const commands = {
     C.writeJson(path.join(dir, 'observations.json'), []);
     fs.writeFileSync(path.join(dir, 'test-plan.md'), `# Test plan — ${project}\n\n_Written by Claude before testing starts (Phase 1)._\n`);
     fs.writeFileSync(C.CURRENT_FILE, id);
-    print({ created: C.rel(dir), activeRun: id });
+    print({ created: C.rel(dir), activeRun: id, mode });
   },
 
   'use-run': async ({ pos }) => {
@@ -230,6 +233,11 @@ const commands = {
     }
     for (const o of data.observations) if (!C.OBSERVATION_TYPES.includes(o.type)) problems.push(`${o.id || 'observation'}: type must be one of ${C.OBSERVATION_TYPES.join(', ')}`);
     if (!data.run.previewUrl) warn.push('run.json: previewUrl is empty');
+    if (data.run.mode === 'preview') {
+      for (const b of data.bugs) {
+        if (b.evidence?.comparison || b.evidence?.figma) warn.push(`${b.id}: preview-only run, but the bug has Figma evidence`);
+      }
+    }
     print({ run: run.id, bugs: data.bugs.length, scenarios: data.scenarios.length, problems, warnings: warn, ok: !problems.length });
     if (problems.length) process.exitCode = 1;
   },
@@ -239,6 +247,7 @@ const commands = {
     const data = C.loadRunData(run);
     const s = C.summarize(data);
     print(`FINAL QA STATUS — ${data.run.project || run.id}
+QA type: ${data.run.mode === 'preview' ? 'Preview-only QA (no design)' : 'Design QA (website vs Figma)'}
 Result: ${C.verdict(data)}
 
 Total scenarios: ${s.scenarios.total}
@@ -275,6 +284,7 @@ ${(data.run.regressionConcerns || []).map((r) => `- ${r}`).join('\n') || '- None
 
   'figma-package': async ({ flags }) => {
     const run = C.resolveRun(flags.run);
+    if (C.loadRunData(run).run.mode === 'preview') throw new Error('This is a preview-only run, so there is no Figma output. The Word report is the deliverable.');
     const { buildFigmaPackage } = require('./lib/figma-package');
     print(await buildFigmaPackage(run, C.loadRunData(run)));
   },
